@@ -94,3 +94,5 @@ ciudades_de_provincia(Provincia, Lista) :-
 poblacion_ciudad(Nombre, Poblacion) :-
     obtener_ciudad(Nombre, ciudad(Nombre, _, Poblacion)).
 
+    
+
