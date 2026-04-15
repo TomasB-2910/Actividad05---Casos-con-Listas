@@ -1,2 +1,96 @@
-# 2. Ejercicio de las ciudades de Canadá
+# 2. Ejercicio de Ciudades de Canadá
+
+## Estructura utilizada
+`ciudad(nombre, provincia, poblacion)`
+
+## Lista de ciudades
+ciudades([
+    ciudad(vancouver,    british_columbia, 675218),
+    ciudad(edmonton,     alberta,          981280),
+    ciudad(calgary,      alberta,          1336000),
+    ciudad(saskatoon,    saskatchewan,     273010),
+    ciudad(regina,       saskatchewan,     226404),
+    ciudad(winnipeg,     manitoba,         749607)
+]).
+
+## Conexiones entre ciudades con costo
+conexion(ciudad(vancouver,  british_columbia, 675218),  ciudad(edmonton,  alberta,       981280),  16).
+conexion(ciudad(vancouver,  british_columbia, 675218),  ciudad(calgary,   alberta,       1336000), 13).
+conexion(ciudad(edmonton,   alberta,          981280),  ciudad(saskatoon, saskatchewan,  273010),  12).
+conexion(ciudad(saskatoon,  saskatchewan,     273010),  ciudad(winnipeg,  manitoba,      749607),  20).
+conexion(ciudad(saskatoon,  saskatchewan,     273010),  ciudad(calgary,   alberta,       1336000),  9).
+conexion(ciudad(calgary,    alberta,          1336000), ciudad(regina,    saskatchewan,  226404),  14).
+conexion(ciudad(calgary,    alberta,          1336000), ciudad(edmonton,  alberta,       981280),   4).
+conexion(ciudad(regina,     saskatchewan,     226404),  ciudad(winnipeg,  manitoba,      749607),   4).
+conexion(ciudad(regina,     saskatchewan,     226404),  ciudad(saskatoon, saskatchewan,  273010),   7).
+
+## Predicado auxiliar para obtener ciudad por nombre
+obtener_ciudad(Nombre, Ciudad) :-
+    ciudades(Lista),
+    member(Ciudad, Lista),
+    Ciudad = ciudad(Nombre, _, _).
+
+## Regla para verificar conexión directa entre dos ciudades
+hay_conexion_directa(Nombre1, Nombre2) :-
+    obtener_ciudad(Nombre1, Ciudad1),
+    obtener_ciudad(Nombre2, Ciudad2),
+    conexion(Ciudad1, Ciudad2, _).
+
+## Regla para obtener todas las conexiones de una ciudad
+conexiones_de(Nombre, ConexionesDesde, ConexionesHacia) :-
+    obtener_ciudad(Nombre, _),
+    findall([N1, N2, Costo],
+        (conexion(ciudad(N1,_,_), ciudad(N2,_,_), Costo), N1 = Nombre),
+        ConexionesDesde),
+    findall([N1, N2, Costo],
+        (conexion(ciudad(N1,_,_), ciudad(N2,_,_), Costo), N2 = Nombre),
+        ConexionesHacia).
+
+## Regla para encontrar camino entre dos ciudades
+camino(NombreInicio, NombreFin, Camino, Costo) :-
+    obtener_ciudad(NombreInicio, CiudadInicio),
+    obtener_ciudad(NombreFin,   CiudadFin),
+    camino_aux(CiudadInicio, CiudadFin, [CiudadInicio], CaminoEstr, 0, Costo),
+    maplist([ciudad(N,_,_), N]>>(true), CaminoEstr, Camino).
+
+## Auxiliar recursivo del camino
+camino_aux(CiudadFin, CiudadFin, _, [CiudadFin], Costo, Costo).
+camino_aux(Actual, Fin, Visitados, [Actual|Camino], CostoActual, CostoTotal) :-
+    conexion(Actual, Siguiente, CostoArista),
+    \+ member(Siguiente, Visitados),
+    NuevoCosto is CostoActual + CostoArista,
+    camino_aux(Siguiente, Fin, [Siguiente|Visitados], Camino, NuevoCosto, CostoTotal).
+
+## Regla para verificar si una ciudad tiene aristas
+tiene_aristas(Nombre) :-
+    obtener_ciudad(Nombre, Ciudad),
+    (conexion(Ciudad, _, _) ; conexion(_, Ciudad, _)).
+
+## Regla para calcular costo pasando por una ciudad intermedia
+costo_via(NombreX, NombreY, NombreZ, CostoTotal) :-
+    obtener_ciudad(NombreX, CX),
+    obtener_ciudad(NombreY, CY),
+    obtener_ciudad(NombreZ, CZ),
+    conexion(CX, CY, Costo1),
+    conexion(CY, CZ, Costo2),
+    CostoTotal is Costo1 + Costo2.
+
+## Regla para verificar si se puede viajar entre dos ciudades
+puede_viajar(Inicio, Fin, Camino, Costo) :-
+    camino(Inicio, Fin, Camino, Costo).
+
+## Regla para verificar si existe un camino entre dos ciudades
+existe_camino(Inicio, Fin) :-
+    puede_viajar(Inicio, Fin, _, _), !.
+existe_camino(_, _) :-
+    false.
+
+## Regla para listar ciudades de una provincia
+ciudades_de_provincia(Provincia, Lista) :-
+    ciudades(Todas),
+    include([ciudad(_,P,_)]>>(P = Provincia), Todas, Lista).
+
+## Regla para obtener la poblacion de una ciudad
+poblacion_ciudad(Nombre, Poblacion) :-
+    obtener_ciudad(Nombre, ciudad(Nombre, _, Poblacion)).
 
